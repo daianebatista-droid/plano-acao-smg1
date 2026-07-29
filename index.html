@@ -10,14 +10,18 @@ body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh
 
 /* ── SETUP OVERLAY ── */
 #setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
-.setup-box{background:#fff;border-radius:14px;padding:24px;max-width:380px;width:100%}
+.setup-box{background:#fff;border-radius:14px;padding:24px;max-width:400px;width:100%}
 .setup-box h2{font-size:17px;margin-bottom:8px;color:#203864}
-.setup-box p{font-size:13px;color:#555;margin-bottom:16px;line-height:1.6}
-.setup-box code{background:#f0f4ff;border-radius:5px;padding:2px 7px;font-size:12px;color:#203864}
+.setup-box p{font-size:13px;color:#555;margin-bottom:14px;line-height:1.6}
+.setup-box code{background:#f0f4ff;border-radius:5px;padding:2px 7px;font-size:12px;color:#203864;word-break:break-all}
 .setup-box input{width:100%;border:1.5px solid #e0e0e0;border-radius:7px;padding:9px 11px;font-size:13px;margin-bottom:10px;font-family:Arial,sans-serif}
 .setup-box input:focus{outline:none;border-color:#203864}
 .setup-btn{width:100%;padding:11px;background:#203864;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer}
 .setup-btn:active{background:#162544}
+.setup-steps{background:#f8f9ff;border-radius:8px;padding:12px;margin-bottom:14px}
+.setup-steps p{font-size:12px;color:#444;margin-bottom:4px;line-height:1.7}
+.setup-steps strong{color:#203864}
+.setup-err{color:#f44336;font-size:12px;margin-bottom:8px;display:none}
 
 /* ── HEADER ── */
 .hdr{background:#203864;color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.25)}
@@ -58,9 +62,7 @@ body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh
 .num{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
 .nm{background:#375623}.nc{background:#1F4E79}.no{background:#833C00}
 .act-title-wrap{flex:1;display:flex;flex-direction:column;gap:3px}
-/* read-only title */
 .act-title-text{font-size:13px;font-weight:500;line-height:1.45;color:#222}
-/* editable title (admin only) */
 .act-title-input{font-size:13px;font-weight:500;line-height:1.45;border:1.5px solid #c5d5f0;background:#f0f5ff;border-radius:5px;width:100%;resize:none;font-family:Arial,sans-serif;color:#222;padding:4px 6px;min-height:38px;overflow:hidden}
 .act-title-input:focus{outline:none;border-color:#203864;background:#eaf0ff}
 .edit-label{font-size:9px;color:#90a8cc;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
@@ -123,15 +125,19 @@ select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD
 <!-- ── SETUP OVERLAY ── -->
 <div id="setup-overlay">
   <div class="setup-box">
-    <h2>⚙️ Configuração inicial</h2>
-    <p>Cole a URL do seu <strong>Firebase Realtime Database</strong> para ativar a sincronização colaborativa.<br><br>
-    Formato: <code>https://SEU-PROJETO.firebaseio.com</code></p>
-    <input type="url" id="fb-url-input" placeholder="https://meu-projeto.firebaseio.com">
-    <button class="setup-btn" onclick="saveFirebaseUrl()">Salvar e continuar</button>
-    <p style="margin-top:12px;font-size:11px;color:#aaa">
-      Firebase gratuito → <strong>console.firebase.google.com</strong><br>
-      Criar projeto → Realtime Database → Iniciar no modo teste → copiar URL.
-    </p>
+    <h2>🔑 Configuração inicial</h2>
+    <p>Para salvar os dados no GitHub, crie um token de acesso pessoal:</p>
+    <div class="setup-steps">
+      <p><strong>1.</strong> Acesse <strong>github.com → Settings</strong></p>
+      <p><strong>2.</strong> Role até <strong>Developer settings</strong> (no fim do menu)</p>
+      <p><strong>3.</strong> <strong>Personal access tokens → Tokens (classic)</strong></p>
+      <p><strong>4.</strong> <strong>Generate new token (classic)</strong></p>
+      <p><strong>5.</strong> Marque a opção <strong>repo</strong> → Generate token</p>
+      <p><strong>6.</strong> Copie o token e cole abaixo</p>
+    </div>
+    <input type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <div id="setup-err" class="setup-err">Token inválido ou sem permissão. Verifique e tente novamente.</div>
+    <button class="setup-btn" onclick="saveGhToken()">Salvar e continuar</button>
   </div>
 </div>
 
@@ -187,20 +193,23 @@ select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  CONFIGURAÇÃO — altere aqui
+//  CONFIGURAÇÃO
 // ═══════════════════════════════════════════════════════════
-var ADMIN_CODE = "smg1daiana"; // código para modo admin
-// Firebase URL é salvo no localStorage após o setup inicial
+var ADMIN_CODE = "smg1daiana";
+var REPO_OWNER = "daianebatista-droid";
+var REPO_NAME  = "plano-acao-smg1";
+var DATA_FILE  = "data.json";
 // ═══════════════════════════════════════════════════════════
 
-var FIREBASE_URL = localStorage.getItem('fb_url') || '';
-var IS_ADMIN = false;
-var actLists = {};
-var rowData = {};
-var debTimers = {};
-var pollTimer = null;
+var GH_TOKEN    = localStorage.getItem('gh_token') || '';
+var currentSha  = null;
+var IS_ADMIN    = false;
+var actLists    = {};
+var rowData     = {};
+var debTimers   = {};
+var pollTimer   = null;
 var pendingDelete = null;
-var lastUpdated = null;
+var saveQueue   = false;
 
 var RESP = ["Jaderson","Ferrari","Leticia","Thiago","Ranieri","Daiana","Diego","Ramon","Lucas","Taina","Jones","Raphael","Marcos","Magno"];
 var STATUS_OPTS = ["Pendente","Em andamento","Concluído","Cancelado"];
@@ -242,32 +251,98 @@ var DEFAULTS = {
   ]}
 };
 
-/* ── FIREBASE ── */
-function fbUrl(path){return FIREBASE_URL+'/'+path+'.json';}
-
-function fbGet(){
-  return fetch(fbUrl('data')).then(function(r){return r.json();}).then(function(d){return d||{};});
+/* ── GITHUB API ── */
+function ghApiUrl(){
+  return 'https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME+'/contents/'+DATA_FILE;
 }
 
-function fbPatch(obj){
+function ghHeaders(){
+  return {
+    'Authorization': 'token '+GH_TOKEN,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+}
+
+function ghGet(){
+  return fetch(ghApiUrl(), {headers: ghHeaders()})
+    .then(function(r){
+      if(r.status === 404) return null;
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(json){
+      if(!json) return {};
+      currentSha = json.sha;
+      var raw = json.content.replace(/\n/g,'');
+      return JSON.parse(decodeURIComponent(escape(atob(raw))));
+    });
+}
+
+function ghSave(){
+  if(!GH_TOKEN) return;
   setSyncStatus('saving','Salvando…');
-  return fetch(fbUrl('data'),{
-    method:'PATCH',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(obj)
-  }).then(function(r){return r.json();})
-    .then(function(){setSyncStatus('ok','Salvo · '+fmtTime(new Date()));})
-    .catch(function(e){setSyncStatus('err','Erro ao salvar.');console.error(e);});
+  var state = buildFullState();
+  var json = JSON.stringify(state, null, 2);
+  var encoded = btoa(unescape(encodeURIComponent(json)));
+  var body = {
+    message: 'Plano de ação atualizado',
+    content: encoded
+  };
+  if(currentSha) body.sha = currentSha;
+
+  return fetch(ghApiUrl(), {
+    method: 'PUT',
+    headers: ghHeaders(),
+    body: JSON.stringify(body)
+  })
+  .then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  })
+  .then(function(json){
+    if(json.content) currentSha = json.content.sha;
+    setSyncStatus('ok','Salvo · '+fmtTime(new Date()));
+  })
+  .catch(function(e){
+    setSyncStatus('err','Erro ao salvar.');
+    console.error(e);
+  });
+}
+
+function buildFullState(){
+  var state = {};
+  ['m','c','o'].forEach(function(cat){
+    state['_act_'+cat] = actLists[cat] || [];
+  });
+  Object.keys(rowData).forEach(function(k){
+    state[k] = rowData[k];
+  });
+  return state;
 }
 
 /* ── SETUP ── */
-function saveFirebaseUrl(){
-  var url = document.getElementById('fb-url-input').value.trim().replace(/\/+$/,'');
-  if(!url||!url.startsWith('http')){alert('URL inválida.');return;}
-  localStorage.setItem('fb_url', url);
-  FIREBASE_URL = url;
-  document.getElementById('setup-overlay').style.display='none';
-  init();
+function saveGhToken(){
+  var token = document.getElementById('gh-token-input').value.trim();
+  if(!token || token.length < 10){
+    document.getElementById('setup-err').style.display='block';
+    return;
+  }
+  document.getElementById('setup-err').style.display='none';
+  setSyncStatus('saving','Verificando token…');
+  // Validate token by fetching repo info
+  fetch('https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME, {
+    headers: {'Authorization': 'token '+token, 'Accept': 'application/vnd.github.v3+json'}
+  }).then(function(r){
+    if(!r.ok) throw new Error('invalid');
+    localStorage.setItem('gh_token', token);
+    GH_TOKEN = token;
+    document.getElementById('setup-overlay').style.display='none';
+    init();
+  }).catch(function(){
+    document.getElementById('setup-err').style.display='block';
+    setSyncStatus('err','Token inválido.');
+  });
 }
 
 /* ── ADMIN ── */
@@ -297,7 +372,6 @@ function updateAdminUI(){
   if(IS_ADMIN){btn.textContent='✏️ Admin ON';btn.className='admin-btn on';}
   else{btn.textContent='🔒 Admin';btn.className='admin-btn';}
 }
-// Allow Enter key in admin input
 document.addEventListener('keydown',function(e){
   if(e.key==='Enter'&&document.getElementById('admin-modal').style.display==='flex') submitAdminCode();
 });
@@ -387,23 +461,17 @@ function defRow(){return {local:'',resp:'',prazo:'',status:'Pendente',obs:'',ant
 function onField(key,field,val){
   if(!rowData[key]) rowData[key]=defRow();
   rowData[key][field]=val;
-  debSave('r_'+key,function(){var p={};p['data/'+key]=rowData[key];return fbPatch({'data/'+key:rowData[key]}).then(renderResumo);});
+  debSave('save', function(){return ghSave().then(renderResumo);});
 }
 function onStatusChange(key,sel){sel.setAttribute('data-s',sel.value);onField(key,'status',sel.value);}
 
 function onTitleChange(cat,key,val){
   var item=(actLists[cat]||[]).find(function(x){return x.id===key;});
   if(item) item.title=val;
-  debSave('t_'+cat,function(){return saveActList(cat);});
+  debSave('save', function(){return ghSave();});
 }
 
-function debSave(k,fn){clearTimeout(debTimers[k]);debTimers[k]=setTimeout(fn,700);}
-
-function saveActList(cat){
-  setSyncStatus('saving','Salvando…');
-  var p={}; p['data/_act_'+cat]=actLists[cat];
-  return fbPatch(p);
-}
+function debSave(k,fn){clearTimeout(debTimers[k]);debTimers[k]=setTimeout(fn,800);}
 
 /* ── ADD / DELETE ── */
 function addAction(cat){
@@ -411,7 +479,7 @@ function addAction(cat){
   if(!actLists[cat]) actLists[cat]=[];
   actLists[cat].push({id:id,title:''});
   renderPanel(cat);
-  saveActList(cat);
+  ghSave();
   setTimeout(function(){
     if(IS_ADMIN){
       var ta=document.getElementById('title-'+id);
@@ -435,10 +503,7 @@ function confirmDelete(){
   delete rowData[key];
   closeModal();
   renderPanel(cat);
-  saveActList(cat);
-  // null out row
-  var p={}; p['data/'+key]=null;
-  fbPatch(p).catch(function(){});
+  ghSave();
 }
 
 /* ── PHOTOS ── */
@@ -450,16 +515,14 @@ function handlePhoto(evt,key,type){
     if(!rowData[key]) rowData[key]=defRow();
     rowData[key][type]=d;
     renderPhoto(key,type,d);
-    var p={}; p['data/'+key]=rowData[key];
-    fbPatch(p);
+    ghSave();
   });
 }
 function delPhoto(key,type){
   if(!rowData[key]) rowData[key]=defRow();
   rowData[key][type]=null;
   renderPhoto(key,type,null);
-  var p={}; p['data/'+key]=rowData[key];
-  fbPatch(p);
+  ghSave();
 }
 function renderPhoto(key,type,d){
   var img=document.getElementById('img-'+key+'-'+type);
@@ -536,7 +599,7 @@ function applyFullState(st){
 
 function reloadData(){
   setSyncStatus('saving','Atualizando…');
-  fbGet().then(function(d){
+  ghGet().then(function(d){
     applyFullState(d);
     setSyncStatus('ok','Atualizado · '+fmtTime(new Date()));
     var ts=document.getElementById('last-upd-ts');
@@ -544,15 +607,15 @@ function reloadData(){
   }).catch(function(){setSyncStatus('err','Erro ao atualizar.');});
 }
 
-/* ── POLLING (5s) ── */
+/* ── POLLING (30s) ── */
 function startPolling(){
   if(pollTimer) clearInterval(pollTimer);
   pollTimer=setInterval(function(){
-    fbGet().then(function(d){
+    ghGet().then(function(d){
       applyFullState(d);
       setSyncStatus('ok','Sincronizado · '+fmtTime(new Date()));
     }).catch(function(){});
-  }, 5000);
+  }, 30000);
 }
 
 /* ── UTILS ── */
@@ -567,20 +630,20 @@ function setSyncStatus(s,msg){
 
 /* ── INIT ── */
 function init(){
-  if(!FIREBASE_URL){
+  if(!GH_TOKEN){
     document.getElementById('setup-overlay').style.display='flex';
     applyFullState({});
     return;
   }
   document.getElementById('setup-overlay').style.display='none';
   setSyncStatus('saving','Carregando…');
-  fbGet().then(function(d){
+  ghGet().then(function(d){
     applyFullState(d);
     setSyncStatus('ok','Pronto · '+fmtTime(new Date()));
     startPolling();
   }).catch(function(e){
     applyFullState({});
-    setSyncStatus('err','Erro de conexão. Verifique a URL do Firebase.');
+    setSyncStatus('err','Erro ao carregar. Verifique o token.');
     console.error(e);
   });
 }
