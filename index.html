@@ -118,6 +118,15 @@ select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD
 .reload-btn{width:100%;padding:11px;background:#203864;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
 .reload-btn:active{background:#162544}
 .last-upd{font-size:11px;color:#aaa;text-align:center;padding-bottom:16px}
+.resp-table{width:100%;border-collapse:collapse;font-size:12px;margin:0}
+.resp-table th{background:#f5f5f5;padding:6px 10px;text-align:left;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #e8e8e8}
+.resp-table td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.resp-table tr:last-child td{border-bottom:none}
+.tag-atrasado{background:#FFEBEE;color:#C62828;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700}
+.tag-prazo{background:#E8F5E9;color:#1B5E20;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700}
+.resp-count{font-weight:700;color:#203864;font-size:14px}
+.resp-section{padding:10px 14px 4px}
+.resp-section-title{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -372,6 +381,7 @@ function updateAdminUI(){
   var btn=document.getElementById('admin-btn');
   if(IS_ADMIN){btn.textContent='✏️ Admin ON';btn.className='admin-btn on';}
   else{btn.textContent='🔒 Admin';btn.className='admin-btn';}
+  ['m','c','o'].forEach(renderPanel);
 }
 document.addEventListener('keydown',function(e){
   if(e.key==='Enter'&&document.getElementById('admin-modal').style.display==='flex') submitAdminCode();
@@ -386,6 +396,7 @@ function renderPanel(cat){
   var cfg=DEFAULTS[cat];
   var list=actLists[cat]||[];
   var addBtnHtml=function(pos){
+    if(!IS_ADMIN) return '';
     return '<button class="add-btn '+cfg.abtn+' '+pos+'" onclick="addAction(\''+cat+'\')">' +
       '<span style="font-size:18px">＋</span> Adicionar nova ação</button>';
   };
@@ -398,7 +409,10 @@ function renderPanel(cat){
 
 function buildCard(cat, key, num, title, cfg){
   var ro=RESP.map(function(r){return '<option>'+r+'</option>';}).join('');
-  var so=STATUS_OPTS.map(function(s){return '<option>'+s+'</option>';}).join('');
+  var so=STATUS_OPTS.map(function(s){
+    if(s==='Concluído'&&!IS_ADMIN) return '<option disabled style="color:#ccc">'+s+' (só Admin)</option>';
+    return '<option>'+s+'</option>';
+  }).join('');
   var titleEl = IS_ADMIN
     ? '<div class="edit-label">✏️ Editar título</div>' +
       '<textarea class="act-title-input" id="title-'+key+'" rows="2"' +
@@ -437,7 +451,7 @@ function pSlot(key,type){
     '<img id="img-'+key+'-'+type+'" style="display:none">'+
     '<div class="pslot-overlay" id="ov-'+key+'-'+type+'" style="display:none">'+
       '<span class="ov-lbl">'+(pa?'ANTES':'DEPOIS')+'</span>'+
-      '<button class="pdel" onclick="event.stopPropagation();delPhoto(\''+key+'\',\''+type+'\')">✕</button>'+
+      (type==='antes'&&!IS_ADMIN?'':'<button class="pdel" onclick="event.stopPropagation();delPhoto(\''+key+'\',\''+type+'\')">✕</button>')+
     '</div>'+
   '</div>';
 }
@@ -551,22 +565,51 @@ function compressImg(file,cb){
 
 /* ── RESUMO ── */
 function renderResumo(){
+  var today = new Date(); today.setHours(0,0,0,0);
+  function isAtrasado(row){
+    if(!row.prazo) return false;
+    var d=new Date(row.prazo+'T00:00:00'); return d<today;
+  }
   var html='<button class="reload-btn" onclick="reloadData()">🔄 Atualizar dados</button>';
   var tot={t:0,p:0,a:0,c:0};
   ['m','c','o'].forEach(function(cat){
     var cfg=DEFAULTS[cat],list=actLists[cat]||[],s={t:list.length,p:0,a:0,c:0};
+    // Responsável → {total, atrasado}
+    var byResp={};
     list.forEach(function(item){
-      var st=(rowData[item.id]||defRow()).status||'Pendente';
+      var row=rowData[item.id]||defRow();
+      var st=row.status||'Pendente';
       if(st==='Pendente')s.p++;else if(st==='Em andamento')s.a++;else if(st==='Concluído')s.c++;
+      if(st==='Pendente'||st==='Em andamento'){
+        var r=row.resp||'Sem responsável';
+        if(!byResp[r]) byResp[r]={total:0,atrasado:0};
+        byResp[r].total++;
+        if(isAtrasado(row)) byResp[r].atrasado++;
+      }
     });
     tot.t+=s.t;tot.p+=s.p;tot.a+=s.a;tot.c+=s.c;
+    // Build resp table
+    var respRows=Object.keys(byResp).sort();
+    var respHtml='';
+    if(respRows.length>0){
+      respHtml='<div class="resp-section"><div class="resp-section-title">⏳ Pendentes por responsável</div>'+
+        '<table class="resp-table"><thead><tr><th>Responsável</th><th>Qtd</th><th>Situação</th></tr></thead><tbody>';
+      respRows.forEach(function(r){
+        var d=byResp[r];
+        var tag=d.atrasado>0
+          ? '<span class="tag-atrasado">'+d.atrasado+' atrasado'+(d.atrasado>1?'s':'')+'</span>'
+          : '<span class="tag-prazo">no prazo</span>';
+        respHtml+='<tr><td>'+r+'</td><td><span class="resp-count">'+d.total+'</span></td><td>'+tag+'</td></tr>';
+      });
+      respHtml+='</tbody></table></div>';
+    }
     html+='<div class="res-card"><div class="res-card-hdr" style="background:'+cfg.color+'"><span>'+cfg.label+'</span><span style="font-size:12px;opacity:.8">'+s.t+' ações</span></div>'+
       '<div class="res-grid">'+
         '<div class="res-stat t-color"><div class="res-num">'+s.t+'</div><div class="res-lbl">Total</div></div>'+
         '<div class="res-stat p-color"><div class="res-num">'+s.p+'</div><div class="res-lbl">Pendente</div></div>'+
         '<div class="res-stat a-color"><div class="res-num">'+s.a+'</div><div class="res-lbl">Em andamento</div></div>'+
         '<div class="res-stat c-color"><div class="res-num">'+s.c+'</div><div class="res-lbl">Concluído</div></div>'+
-      '</div></div>';
+      '</div>'+respHtml+'</div>';
   });
   html+='<div class="res-card"><div class="res-card-hdr" style="background:#203864"><span>TOTAL GERAL</span><span style="font-size:12px;opacity:.8">'+tot.t+' ações</span></div>'+
     '<div class="res-grid">'+
