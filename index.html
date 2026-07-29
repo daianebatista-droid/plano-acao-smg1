@@ -121,7 +121,7 @@ select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD
 <body>
 
 <!-- ── SETUP OVERLAY ── -->
-<div id="setup-overlay" style="display:none">
+<div id="setup-overlay">
   <div class="setup-box">
     <h2>⚙️ Configuração inicial</h2>
     <p>Cole a URL do seu <strong>Firebase Realtime Database</strong> para ativar a sincronização colaborativa.<br><br>
@@ -572,6 +572,7 @@ function init(){
     applyFullState({});
     return;
   }
+  document.getElementById('setup-overlay').style.display='none';
   setSyncStatus('saving','Carregando…');
   fbGet().then(function(d){
     applyFullState(d);
