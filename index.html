@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Plano de Ação — SMG1 Contagem</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh}
+
+/* ── SETUP OVERLAY ── */
+#setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:#fff;border-radius:14px;padding:24px;max-width:380px;width:100%}
+.setup-box h2{font-size:17px;margin-bottom:8px;color:#203864}
+.setup-box p{font-size:13px;color:#555;margin-bottom:16px;line-height:1.6}
+.setup-box code{background:#f0f4ff;border-radius:5px;padding:2px 7px;font-size:12px;color:#203864}
+.setup-box input{width:100%;border:1.5px solid #e0e0e0;border-radius:7px;padding:9px 11px;font-size:13px;margin-bottom:10px;font-family:Arial,sans-serif}
+.setup-box input:focus{outline:none;border-color:#203864}
+.setup-btn{width:100%;padding:11px;background:#203864;color:#fff;border:none;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer}
+.setup-btn:active{background:#162544}
+
+/* ── HEADER ── */
+.hdr{background:#203864;color:#fff;padding:14px 16px 10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.hdr-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.hdr h1{font-size:16px;font-weight:700;line-height:1.2}
+.hdr p{font-size:11px;opacity:.75;margin-top:2px}
+.admin-btn{flex-shrink:0;background:rgba(255,255,255,.15);border:none;color:rgba(255,255,255,.75);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.admin-btn.on{background:#FFC107;color:#333;font-weight:700}
+.sync-bar{background:#1a2d4f;padding:4px 16px;display:flex;align-items:center;gap:6px;font-size:10px;color:rgba(255,255,255,.65);min-height:22px}
+.dot{width:7px;height:7px;border-radius:50%;background:#4CAF50;flex-shrink:0;transition:background .3s}
+.dot.saving{background:#FFC107;animation:blink 1s infinite}
+.dot.err{background:#f44336}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── TABS ── */
+.tabs{background:#fff;display:flex;overflow-x:auto;border-bottom:2px solid #e0e0e0;position:sticky;top:62px;z-index:99}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:75px;padding:9px 6px;font-size:11px;font-weight:700;border:none;background:none;color:#999;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:color .2s}
+.tab.active{color:#203864;border-bottom-color:#203864}
+.tab[data-c="m"].active{color:#375623;border-bottom-color:#375623}
+.tab[data-c="c"].active{color:#1F4E79;border-bottom-color:#1F4E79}
+.tab[data-c="o"].active{color:#833C00;border-bottom-color:#833C00}
+
+/* ── PANELS ── */
+.panel{display:none;padding:10px}
+.panel.active{display:block}
+
+/* ── ADD BTN ── */
+.add-btn{width:100%;padding:11px;background:#fff;color:#555;border:2px dashed #ccc;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
+.add-btn:hover{border-color:#203864;color:#203864;background:#f5f8ff}
+.add-btn.bm:hover{border-color:#375623;color:#375623}.add-btn.bc:hover{border-color:#1F4E79;color:#1F4E79}.add-btn.bo:hover{border-color:#833C00;color:#833C00}
+.add-btn.top{margin-bottom:10px}.add-btn.bottom{margin-top:2px;margin-bottom:4px}
+
+/* ── CARD ── */
+.card{background:#fff;border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.card-hdr{padding:8px 10px 8px 12px;display:flex;align-items:flex-start;gap:8px;border-left:4px solid #ccc}
+.card-hdr.hm{border-left-color:#375623}.card-hdr.hc{border-left-color:#1F4E79}.card-hdr.ho{border-left-color:#833C00}
+.num{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
+.nm{background:#375623}.nc{background:#1F4E79}.no{background:#833C00}
+.act-title-wrap{flex:1;display:flex;flex-direction:column;gap:3px}
+/* read-only title */
+.act-title-text{font-size:13px;font-weight:500;line-height:1.45;color:#222}
+/* editable title (admin only) */
+.act-title-input{font-size:13px;font-weight:500;line-height:1.45;border:1.5px solid #c5d5f0;background:#f0f5ff;border-radius:5px;width:100%;resize:none;font-family:Arial,sans-serif;color:#222;padding:4px 6px;min-height:38px;overflow:hidden}
+.act-title-input:focus{outline:none;border-color:#203864;background:#eaf0ff}
+.edit-label{font-size:9px;color:#90a8cc;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+.del-btn{flex-shrink:0;background:none;border:none;color:#ddd;font-size:17px;cursor:pointer;padding:2px 4px;line-height:1;margin-top:2px;border-radius:4px}
+.del-btn:hover{color:#f44336;background:#fff0f0}
+
+.card-body{padding:0 12px 4px;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.f{display:flex;flex-direction:column;gap:3px}
+.f.full{grid-column:1/-1}
+.f label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px}
+.f input,.f select,.f textarea{width:100%;border:1.5px solid #e0e0e0;border-radius:6px;padding:7px 9px;font-size:13px;font-family:Arial,sans-serif;background:#fafafa;transition:border-color .2s}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:#203864;background:#fff}
+.f textarea{resize:none;height:50px}
+select[data-s="Pendente"]{background:#FCE4D6;color:#7B3F00;border-color:#FFAB76}
+select[data-s="Em andamento"]{background:#E3F2FD;color:#0D47A1;border-color:#90CAF9}
+select[data-s="Concluído"]{background:#E8F5E9;color:#1B5E20;border-color:#81C784}
+select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD}
+
+/* ── PHOTOS ── */
+.photo-sec{padding:8px 12px 12px}
+.photo-lbl{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.photo-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pslot{border-radius:8px;overflow:hidden;cursor:pointer;position:relative;min-height:90px}
+.pslot.pa{border:2px dashed #81C784;background:#F9FBE7}.pslot.pd{border:2px dashed #64B5F6;background:#E3F2FD}
+.pslot input[type=file]{display:none}
+.pslot-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 8px;min-height:90px}
+.pslot-empty .icon{font-size:26px}
+.pslot-empty .lbl{font-size:11px;font-weight:700}
+.pslot.pa .lbl{color:#2E7D32}.pslot.pd .lbl{color:#1565C0}
+.pslot-empty .hint{font-size:10px;color:#aaa;text-align:center;line-height:1.3}
+.pslot img{width:100%;height:110px;object-fit:cover;display:block}
+.pslot-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));padding:5px 7px;display:flex;justify-content:space-between;align-items:center}
+.pslot-overlay .ov-lbl{color:#fff;font-size:10px;font-weight:600}
+.pdel{background:rgba(220,53,69,.85);color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:10px;cursor:pointer}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:320px}
+.modal h3{font-size:15px;margin-bottom:8px}
+.modal p{font-size:13px;color:#555;margin-bottom:16px;line-height:1.5}
+.modal-btns{display:flex;gap:8px}
+.modal-btns button{flex:1;padding:10px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.btn-cancel{background:#f0f0f0;color:#555}.btn-confirm{background:#f44336;color:#fff}
+
+/* ── RESUMO ── */
+.res-card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:10px}
+.res-card-hdr{padding:10px 14px;font-size:13px;font-weight:700;color:#fff;display:flex;justify-content:space-between;align-items:center}
+.res-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:#e8e8e8}
+.res-stat{background:#fff;padding:10px;text-align:center}
+.res-num{font-size:24px;font-weight:700;line-height:1}
+.res-lbl{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+.p-color .res-num{color:#E65100}.a-color .res-num{color:#0D47A1}.c-color .res-num{color:#1B5E20}.t-color .res-num{color:#203864}
+.reload-btn{width:100%;padding:11px;background:#203864;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+.reload-btn:active{background:#162544}
+.last-upd{font-size:11px;color:#aaa;text-align:center;padding-bottom:16px}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP OVERLAY ── -->
+<div id="setup-overlay" style="display:none">
+  <div class="setup-box">
+    <h2>⚙️ Configuração inicial</h2>
+    <p>Cole a URL do seu <strong>Firebase Realtime Database</strong> para ativar a sincronização colaborativa.<br><br>
+    Formato: <code>https://SEU-PROJETO.firebaseio.com</code></p>
+    <input type="url" id="fb-url-input" placeholder="https://meu-projeto.firebaseio.com">
+    <button class="setup-btn" onclick="saveFirebaseUrl()">Salvar e continuar</button>
+    <p style="margin-top:12px;font-size:11px;color:#aaa">
+      Firebase gratuito → <strong>console.firebase.google.com</strong><br>
+      Criar projeto → Realtime Database → Iniciar no modo teste → copiar URL.
+    </p>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <h1>Plano de Ação — SMG1 Contagem</h1>
+      <p>Todos podem visualizar e preencher</p>
+    </div>
+    <button class="admin-btn" id="admin-btn" onclick="toggleAdmin()">🔒 Admin</button>
+  </div>
+</div>
+<div class="sync-bar"><div class="dot" id="dot"></div><span id="sync-msg">Carregando…</span></div>
+
+<div class="tabs">
+  <button class="tab active" data-c="r" onclick="showTab('r',this)">📊 Resumo</button>
+  <button class="tab" data-c="m" onclick="showTab('m',this)">🔧 Manutenção</button>
+  <button class="tab" data-c="c" onclick="showTab('c',this)">🛒 Compras</button>
+  <button class="tab" data-c="o" onclick="showTab('o',this)">⚙️ Operação</button>
+</div>
+
+<div id="panel-r" class="panel active"></div>
+<div id="panel-m" class="panel"></div>
+<div id="panel-c" class="panel"></div>
+<div id="panel-o" class="panel"></div>
+
+<div class="modal-bg" id="modal" style="display:none">
+  <div class="modal">
+    <h3>Excluir ação?</h3>
+    <p id="modal-msg">Esta ação será removida para todos.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-bg" id="admin-modal" style="display:none">
+  <div class="modal">
+    <h3>🔑 Modo Admin</h3>
+    <p>Digite o código de acesso para editar e gerenciar ações.</p>
+    <div class="f" style="margin-bottom:12px">
+      <input type="password" id="admin-code-input" placeholder="Código de acesso" style="width:100%;border:1.5px solid #e0e0e0;border-radius:6px;padding:9px 11px;font-size:14px;font-family:Arial,sans-serif">
+    </div>
+    <div id="admin-err" style="color:#f44336;font-size:12px;margin-bottom:10px;display:none">Código incorreto.</div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAdminModal()">Cancelar</button>
+      <button class="btn-confirm" style="background:#203864" onclick="submitAdminCode()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONFIGURAÇÃO — altere aqui
+// ═══════════════════════════════════════════════════════════
+var ADMIN_CODE = "smg1daiana"; // código para modo admin
+// Firebase URL é salvo no localStorage após o setup inicial
+// ═══════════════════════════════════════════════════════════
+
+var FIREBASE_URL = localStorage.getItem('fb_url') || '';
+var IS_ADMIN = false;
+var actLists = {};
+var rowData = {};
+var debTimers = {};
+var pollTimer = null;
+var pendingDelete = null;
+var lastUpdated = null;
+
+var RESP = ["Jaderson","Ferrari","Leticia","Thiago","Ranieri","Daiana","Diego","Ramon","Lucas","Taina","Jones","Raphael","Marcos","Magno"];
+var STATUS_OPTS = ["Pendente","Em andamento","Concluído","Cancelado"];
+
+var DEFAULTS = {
+  m:{label:"Manutenção",color:"#375623",hcls:"hm",ncls:"nm",abtn:"bm",actions:[
+    "Retirar DOCKLITs quebrados das docas 09–12 e realocar nas 05–08 (sugestão: time da madrugada)",
+    "Conserto da cancela de entrada de pedestres na entrada do galpão",
+    "Ajustar fiação exposta no portal de entrada Protege",
+    "T de PVC para goleio das esteiras (mais leve e eficiente no processo)",
+    "Religar/consertar relógio da doca 08",
+    "Guarda-corpo segregando docas 03 e 04 para CHP e descarte",
+    "Renovar EVAs nas gaiolas sem proteção",
+    "Colocar EVAs nas pontas dos flowracks (onde time colocou plástico para proteger perna)",
+    "Reparar flowracks com improviso (plástico amarrado)",
+    "Instalar tomadas adicionais no local do KIOSCO da operação",
+    "Programar limpeza dos ventiladores da operação",
+    "Reparar grade da sala de HH (costas para paletes vazios)",
+    "Instalar suporte de ferro para vassouras na operação",
+    "Reformar parede amarela frente à esteira de volumoso",
+    "Reparar guarda-corpo amassado da entrada de veículos",
+    "Reparar grade da sala de transpaleteira",
+    "Trocar lâmpada da sala de reunião"
+  ]},
+  c:{label:"Compras",color:"#1F4E79",hcls:"hc",ncls:"nc",abtn:"bc",actions:[
+    "Placas de identificação: Doca 03 = CHP | Doca 04 = Descarte Reciclável",
+    "Substituir todas as placas de papel de SHE360 por material padrão gráfica",
+    "Comprar 2 flowracks novos"
+  ]},
+  o:{label:"Operação",color:"#833C00",hcls:"ho",ncls:"no",abtn:"bo",actions:[
+    "Descartar mesa do PS esteira GM e mesa da doca 16",
+    "Identificar gaiolas por onda (gestão inicial, macarrão)",
+    "Garantir utilização do monitor de LM durante expedição",
+    "Programar limpeza de mesas e impressoras com etiquetas coladas",
+    "Desenvolver plano para utilizar 100% das bobinas de etiquetas",
+    "Descartar lixeiras de ferro amassadas",
+    "Multiplicar com o time: impressora sempre fechada e não colar etiquetas",
+    "Guardar placa de expedição de motos em outro local"
+  ]}
+};
+
+/* ── FIREBASE ── */
+function fbUrl(path){return FIREBASE_URL+'/'+path+'.json';}
+
+function fbGet(){
+  return fetch(fbUrl('data')).then(function(r){return r.json();}).then(function(d){return d||{};});
+}
+
+function fbPatch(obj){
+  setSyncStatus('saving','Salvando…');
+  return fetch(fbUrl('data'),{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(obj)
+  }).then(function(r){return r.json();})
+    .then(function(){setSyncStatus('ok','Salvo · '+fmtTime(new Date()));})
+    .catch(function(e){setSyncStatus('err','Erro ao salvar.');console.error(e);});
+}
+
+/* ── SETUP ── */
+function saveFirebaseUrl(){
+  var url = document.getElementById('fb-url-input').value.trim().replace(/\/+$/,'');
+  if(!url||!url.startsWith('http')){alert('URL inválida.');return;}
+  localStorage.setItem('fb_url', url);
+  FIREBASE_URL = url;
+  document.getElementById('setup-overlay').style.display='none';
+  init();
+}
+
+/* ── ADMIN ── */
+function toggleAdmin(){
+  if(IS_ADMIN){IS_ADMIN=false;updateAdminUI();return;}
+  document.getElementById('admin-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('admin-code-input').focus();},100);
+}
+function closeAdminModal(){
+  document.getElementById('admin-modal').style.display='none';
+  document.getElementById('admin-code-input').value='';
+  document.getElementById('admin-err').style.display='none';
+}
+function submitAdminCode(){
+  var code=document.getElementById('admin-code-input').value;
+  if(code===ADMIN_CODE){
+    IS_ADMIN=true;
+    closeAdminModal();
+    updateAdminUI();
+    ['m','c','o'].forEach(renderPanel);
+  } else {
+    document.getElementById('admin-err').style.display='block';
+  }
+}
+function updateAdminUI(){
+  var btn=document.getElementById('admin-btn');
+  if(IS_ADMIN){btn.textContent='✏️ Admin ON';btn.className='admin-btn on';}
+  else{btn.textContent='🔒 Admin';btn.className='admin-btn';}
+}
+// Allow Enter key in admin input
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.getElementById('admin-modal').style.display==='flex') submitAdminCode();
+});
+
+/* ── BUILD PANELS ── */
+function defaultActList(cat){
+  return DEFAULTS[cat].actions.map(function(t,i){return {id:cat+'_'+i,title:t};});
+}
+
+function renderPanel(cat){
+  var cfg=DEFAULTS[cat];
+  var list=actLists[cat]||[];
+  var addBtnHtml=function(pos){
+    return '<button class="add-btn '+cfg.abtn+' '+pos+'" onclick="addAction(\''+cat+'\')">' +
+      '<span style="font-size:18px">＋</span> Adicionar nova ação</button>';
+  };
+  var html = addBtnHtml('top');
+  list.forEach(function(item,i){html+=buildCard(cat,item.id,i+1,item.title,cfg);});
+  html += addBtnHtml('bottom');
+  document.getElementById('panel-'+cat).innerHTML=html;
+  list.forEach(function(item){applyRowToDOM(item.id, rowData[item.id]||defRow());});
+}
+
+function buildCard(cat, key, num, title, cfg){
+  var ro=RESP.map(function(r){return '<option>'+r+'</option>';}).join('');
+  var so=STATUS_OPTS.map(function(s){return '<option>'+s+'</option>';}).join('');
+  var titleEl = IS_ADMIN
+    ? '<div class="edit-label">✏️ Editar título</div>' +
+      '<textarea class="act-title-input" id="title-'+key+'" rows="2"' +
+      ' oninput="autoResize(this);onTitleChange(\''+cat+'\',\''+key+'\',this.value)">' +
+      escHtml(title)+'</textarea>'
+    : '<div class="act-title-text">'+escHtml(title)+'</div>';
+  var delEl = IS_ADMIN
+    ? '<button class="del-btn" onclick="askDelete(\''+cat+'\',\''+key+'\',\''+escHtml(title).substring(0,40)+'\')" title="Excluir">🗑</button>'
+    : '';
+  return '<div class="card" id="card-'+key+'">'+
+    '<div class="card-hdr '+cfg.hcls+'">'+
+      '<div class="num '+cfg.ncls+'">'+num+'</div>'+
+      '<div class="act-title-wrap">'+titleEl+'</div>'+
+      delEl+
+    '</div>'+
+    '<div class="card-body">'+
+      '<div class="f full"><label>Local de Atuação</label><input type="text" id="local-'+key+'" placeholder="Ex: Doca 08, Esteira, Sala de HH…" oninput="onField(\''+key+'\',\'local\',this.value)"></div>'+
+      '<div class="f"><label>Responsável</label><select id="resp-'+key+'" onchange="onField(\''+key+'\',\'resp\',this.value)"><option value="">Selecionar…</option>'+ro+'</select></div>'+
+      '<div class="f"><label>Prazo</label><input type="date" id="prazo-'+key+'" onchange="onField(\''+key+'\',\'prazo\',this.value)"></div>'+
+      '<div class="f full"><label>Status</label><select id="status-'+key+'" onchange="onStatusChange(\''+key+'\',this)">'+so+'</select></div>'+
+      '<div class="f full"><label>Observações</label><textarea id="obs-'+key+'" placeholder="Anotações…" oninput="onField(\''+key+'\',\'obs\',this.value)"></textarea></div>'+
+    '</div>'+
+    '<div class="photo-sec"><div class="photo-lbl">Fotos</div><div class="photo-row">'+
+      pSlot(key,'antes')+pSlot(key,'depois')+
+    '</div></div>'+
+  '</div>';
+}
+
+function pSlot(key,type){
+  var pa=type==='antes';
+  var cls=pa?'pa':'pd';
+  var lbl=pa?'📷 ANTES':'📷 DEPOIS';
+  return '<div class="pslot '+cls+'" id="slot-'+key+'-'+type+'" onclick="trigCam(\'inp-'+key+'-'+type+'\')">' +
+    '<input type="file" accept="image/*" capture="environment" id="inp-'+key+'-'+type+'" onchange="handlePhoto(event,\''+key+'\',\''+type+'\')">' +
+    '<div class="pslot-empty" id="empty-'+key+'-'+type+'"><div class="icon">📸</div><div class="lbl">'+lbl+'</div><div class="hint">Toque para abrir a câmera</div></div>'+
+    '<img id="img-'+key+'-'+type+'" style="display:none">'+
+    '<div class="pslot-overlay" id="ov-'+key+'-'+type+'" style="display:none">'+
+      '<span class="ov-lbl">'+(pa?'ANTES':'DEPOIS')+'</span>'+
+      '<button class="pdel" onclick="event.stopPropagation();delPhoto(\''+key+'\',\''+type+'\')">✕</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function applyRowToDOM(key, row){
+  var g=function(id){return document.getElementById(id);};
+  if(g('local-'+key)) g('local-'+key).value=row.local||'';
+  if(g('resp-'+key)) g('resp-'+key).value=row.resp||'';
+  if(g('prazo-'+key)) g('prazo-'+key).value=row.prazo||'';
+  var ss=g('status-'+key);
+  if(ss){ss.value=row.status||'Pendente';ss.setAttribute('data-s',ss.value);}
+  if(g('obs-'+key)) g('obs-'+key).value=row.obs||'';
+  renderPhoto(key,'antes',row.antes||null);
+  renderPhoto(key,'depois',row.depois||null);
+  var ta=g('title-'+key);
+  if(ta) autoResize(ta);
+}
+
+/* ── FIELD HANDLERS ── */
+function defRow(){return {local:'',resp:'',prazo:'',status:'Pendente',obs:'',antes:null,depois:null};}
+
+function onField(key,field,val){
+  if(!rowData[key]) rowData[key]=defRow();
+  rowData[key][field]=val;
+  debSave('r_'+key,function(){var p={};p['data/'+key]=rowData[key];return fbPatch({'data/'+key:rowData[key]}).then(renderResumo);});
+}
+function onStatusChange(key,sel){sel.setAttribute('data-s',sel.value);onField(key,'status',sel.value);}
+
+function onTitleChange(cat,key,val){
+  var item=(actLists[cat]||[]).find(function(x){return x.id===key;});
+  if(item) item.title=val;
+  debSave('t_'+cat,function(){return saveActList(cat);});
+}
+
+function debSave(k,fn){clearTimeout(debTimers[k]);debTimers[k]=setTimeout(fn,700);}
+
+function saveActList(cat){
+  setSyncStatus('saving','Salvando…');
+  var p={}; p['data/_act_'+cat]=actLists[cat];
+  return fbPatch(p);
+}
+
+/* ── ADD / DELETE ── */
+function addAction(cat){
+  var id=cat+'_new_'+Date.now();
+  if(!actLists[cat]) actLists[cat]=[];
+  actLists[cat].push({id:id,title:''});
+  renderPanel(cat);
+  saveActList(cat);
+  setTimeout(function(){
+    if(IS_ADMIN){
+      var ta=document.getElementById('title-'+id);
+      if(ta){ta.focus();ta.scrollIntoView({behavior:'smooth',block:'center'});}
+    } else {
+      document.getElementById('card-'+id).scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },100);
+}
+
+function askDelete(cat,key,preview){
+  pendingDelete={cat:cat,key:key};
+  document.getElementById('modal-msg').textContent='"'+preview+'…" será removida para todos.';
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';pendingDelete=null;}
+function confirmDelete(){
+  if(!pendingDelete) return;
+  var cat=pendingDelete.cat, key=pendingDelete.key;
+  actLists[cat]=(actLists[cat]||[]).filter(function(x){return x.id!==key;});
+  delete rowData[key];
+  closeModal();
+  renderPanel(cat);
+  saveActList(cat);
+  // null out row
+  var p={}; p['data/'+key]=null;
+  fbPatch(p).catch(function(){});
+}
+
+/* ── PHOTOS ── */
+function trigCam(id){document.getElementById(id).click();}
+
+function handlePhoto(evt,key,type){
+  var file=evt.target.files[0]; if(!file) return;
+  compressImg(file,function(d){
+    if(!rowData[key]) rowData[key]=defRow();
+    rowData[key][type]=d;
+    renderPhoto(key,type,d);
+    var p={}; p['data/'+key]=rowData[key];
+    fbPatch(p);
+  });
+}
+function delPhoto(key,type){
+  if(!rowData[key]) rowData[key]=defRow();
+  rowData[key][type]=null;
+  renderPhoto(key,type,null);
+  var p={}; p['data/'+key]=rowData[key];
+  fbPatch(p);
+}
+function renderPhoto(key,type,d){
+  var img=document.getElementById('img-'+key+'-'+type);
+  var empty=document.getElementById('empty-'+key+'-'+type);
+  var ov=document.getElementById('ov-'+key+'-'+type);
+  if(!img) return;
+  if(d){img.src=d;img.style.display='block';empty.style.display='none';ov.style.display='flex';}
+  else{img.src='';img.style.display='none';empty.style.display='flex';ov.style.display='none';}
+}
+function compressImg(file,cb){
+  var r=new FileReader();
+  r.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=900,ratio=Math.min(MAX/img.width,MAX/img.height,1);
+      var c=document.createElement('canvas');
+      c.width=Math.round(img.width*ratio);c.height=Math.round(img.height*ratio);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',0.55));
+    };
+    img.src=e.target.result;
+  };
+  r.readAsDataURL(file);
+}
+
+/* ── RESUMO ── */
+function renderResumo(){
+  var html='<button class="reload-btn" onclick="reloadData()">🔄 Atualizar dados</button>';
+  var tot={t:0,p:0,a:0,c:0};
+  ['m','c','o'].forEach(function(cat){
+    var cfg=DEFAULTS[cat],list=actLists[cat]||[],s={t:list.length,p:0,a:0,c:0};
+    list.forEach(function(item){
+      var st=(rowData[item.id]||defRow()).status||'Pendente';
+      if(st==='Pendente')s.p++;else if(st==='Em andamento')s.a++;else if(st==='Concluído')s.c++;
+    });
+    tot.t+=s.t;tot.p+=s.p;tot.a+=s.a;tot.c+=s.c;
+    html+='<div class="res-card"><div class="res-card-hdr" style="background:'+cfg.color+'"><span>'+cfg.label+'</span><span style="font-size:12px;opacity:.8">'+s.t+' ações</span></div>'+
+      '<div class="res-grid">'+
+        '<div class="res-stat t-color"><div class="res-num">'+s.t+'</div><div class="res-lbl">Total</div></div>'+
+        '<div class="res-stat p-color"><div class="res-num">'+s.p+'</div><div class="res-lbl">Pendente</div></div>'+
+        '<div class="res-stat a-color"><div class="res-num">'+s.a+'</div><div class="res-lbl">Em andamento</div></div>'+
+        '<div class="res-stat c-color"><div class="res-num">'+s.c+'</div><div class="res-lbl">Concluído</div></div>'+
+      '</div></div>';
+  });
+  html+='<div class="res-card"><div class="res-card-hdr" style="background:#203864"><span>TOTAL GERAL</span><span style="font-size:12px;opacity:.8">'+tot.t+' ações</span></div>'+
+    '<div class="res-grid">'+
+      '<div class="res-stat t-color"><div class="res-num">'+tot.t+'</div><div class="res-lbl">Total</div></div>'+
+      '<div class="res-stat p-color"><div class="res-num">'+tot.p+'</div><div class="res-lbl">Pendente</div></div>'+
+      '<div class="res-stat a-color"><div class="res-num">'+tot.a+'</div><div class="res-lbl">Em andamento</div></div>'+
+      '<div class="res-stat c-color"><div class="res-num">'+tot.c+'</div><div class="res-lbl">Concluído</div></div>'+
+    '</div></div>'+
+  '<div class="last-upd" id="last-upd-ts">Última atualização: —</div>';
+  document.getElementById('panel-r').innerHTML=html;
+}
+
+/* ── TAB ── */
+function showTab(cat,el){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('panel-'+cat).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ── APPLY STATE ── */
+function applyFullState(st){
+  st=st||{};
+  ['m','c','o'].forEach(function(cat){
+    actLists[cat]=st['_act_'+cat]||defaultActList(cat);
+  });
+  Object.keys(st).forEach(function(k){if(k[0]!=='_') rowData[k]=st[k];});
+  ['m','c','o'].forEach(renderPanel);
+  renderResumo();
+}
+
+function reloadData(){
+  setSyncStatus('saving','Atualizando…');
+  fbGet().then(function(d){
+    applyFullState(d);
+    setSyncStatus('ok','Atualizado · '+fmtTime(new Date()));
+    var ts=document.getElementById('last-upd-ts');
+    if(ts) ts.textContent='Última atualização: '+new Date().toLocaleString('pt-BR');
+  }).catch(function(){setSyncStatus('err','Erro ao atualizar.');});
+}
+
+/* ── POLLING (5s) ── */
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer=setInterval(function(){
+    fbGet().then(function(d){
+      applyFullState(d);
+      setSyncStatus('ok','Sincronizado · '+fmtTime(new Date()));
+    }).catch(function(){});
+  }, 5000);
+}
+
+/* ── UTILS ── */
+function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtTime(d){return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function setSyncStatus(s,msg){
+  var dot=document.getElementById('dot'),txt=document.getElementById('sync-msg');
+  dot.className='dot'+(s==='saving'?' saving':s==='err'?' err':'');
+  txt.textContent=msg;
+}
+
+/* ── INIT ── */
+function init(){
+  if(!FIREBASE_URL){
+    document.getElementById('setup-overlay').style.display='flex';
+    applyFullState({});
+    return;
+  }
+  setSyncStatus('saving','Carregando…');
+  fbGet().then(function(d){
+    applyFullState(d);
+    setSyncStatus('ok','Pronto · '+fmtTime(new Date()));
+    startPolling();
+  }).catch(function(e){
+    applyFullState({});
+    setSyncStatus('err','Erro de conexão. Verifique a URL do Firebase.');
+    console.error(e);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
