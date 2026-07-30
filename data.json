@@ -125,12 +125,7 @@
       "title": "Multiplicar com o time: impressora sempre fechada e não colar etiquetas"
     }
   ],
-  "_act_s": [
-    {
-      "id": "s_5",
-      "title": "Substituir todas as placas de papel de SHE360 por material padrão gráfica"
-    }
-  ],
+  "_act_s": [],
   "m_0": {
     "local": "Docas 05 à 08",
     "resp": "Taina",
