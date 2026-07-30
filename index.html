@@ -53,11 +53,14 @@ body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh
 @media(min-width:768px){
   .panel{padding:14px 20px}
   .cards-grid{grid-template-columns:1fr 1fr;gap:14px}
-  .card{margin-bottom:0}
+  .card{margin-bottom:0;display:flex;flex-direction:column}
+  .card-body{flex:1}
   .pslot img{height:170px}
   .pslot{min-height:130px}
   .pslot-empty{min-height:130px}
   .add-btn{max-width:360px}
+  .f input,.f select{height:38px}
+  .f textarea{height:54px}
 }
 @media(min-width:1100px){
   .panel{max-width:1280px;margin:0 auto;padding:16px 24px}
@@ -704,6 +707,39 @@ function init(){
     console.error(e);
   });
 }
+
+/* ── EQUALIZE CARD HEADERS ── */
+function equalizeHeaders(){
+  document.querySelectorAll('.cards-grid').forEach(function(grid){
+    // Reset
+    grid.querySelectorAll('.card-hdr').forEach(function(h){h.style.minHeight='';});
+    if(window.innerWidth < 768) return;
+    // Group cards by row (same offsetTop)
+    var cards = Array.from(grid.querySelectorAll('.card'));
+    var rows = {};
+    cards.forEach(function(card){
+      var top = card.getBoundingClientRect().top + window.scrollY;
+      var key = Math.round(top/5)*5; // bucket to 5px to avoid float issues
+      if(!rows[key]) rows[key]=[];
+      rows[key].push(card);
+    });
+    Object.keys(rows).forEach(function(key){
+      var rowCards = rows[key];
+      var maxH = Math.max.apply(null, rowCards.map(function(c){
+        var h=c.querySelector('.card-hdr'); return h?h.offsetHeight:0;
+      }));
+      rowCards.forEach(function(c){
+        var h=c.querySelector('.card-hdr'); if(h) h.style.minHeight=maxH+'px';
+      });
+    });
+  });
+}
+
+// Run after renders
+var _origRenderPanel = renderPanel;
+renderPanel = function(cat){ _origRenderPanel(cat); requestAnimationFrame(equalizeHeaders); };
+
+window.addEventListener('resize', function(){ requestAnimationFrame(equalizeHeaders); });
 
 init();
 </script>
