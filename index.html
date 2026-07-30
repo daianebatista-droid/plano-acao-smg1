@@ -48,6 +48,22 @@ body{font-family:Arial,sans-serif;background:#f0f2f5;color:#222;min-height:100vh
 /* ── PANELS ── */
 .panel{display:none;padding:10px}
 .panel.active{display:block}
+.cards-grid{display:grid;grid-template-columns:1fr;gap:0}
+
+@media(min-width:768px){
+  .panel{padding:14px 20px}
+  .cards-grid{grid-template-columns:1fr 1fr;gap:14px}
+  .card{margin-bottom:0}
+  .pslot img{height:170px}
+  .pslot{min-height:130px}
+  .pslot-empty{min-height:130px}
+  .add-btn{max-width:360px}
+}
+@media(min-width:1100px){
+  .panel{max-width:1280px;margin:0 auto;padding:16px 24px}
+  .cards-grid{grid-template-columns:repeat(3,1fr);gap:16px}
+  .pslot img{height:200px}
+}
 
 /* ── ADD BTN ── */
 .add-btn{width:100%;padding:11px;background:#fff;color:#555;border:2px dashed #ccc;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
@@ -154,7 +170,7 @@ select[data-s="Cancelado"]{background:#F5F5F5;color:#616161;border-color:#BDBDBD
   <div class="hdr-row">
     <div>
       <h1>Plano de Ação — SMG1 Contagem</h1>
-      <p>Todos podem visualizar e preencher</p>
+      <p>SMG1 mais linda! 💛</p>
     </div>
     <button class="admin-btn" id="admin-btn" onclick="toggleAdmin()">🔒 Admin</button>
   </div>
@@ -401,7 +417,9 @@ function renderPanel(cat){
       '<span style="font-size:18px">＋</span> Adicionar nova ação</button>';
   };
   var html = addBtnHtml('top');
+  html += '<div class="cards-grid">';
   list.forEach(function(item,i){html+=buildCard(cat,item.id,i+1,item.title,cfg);});
+  html += '</div>';
   html += addBtnHtml('bottom');
   document.getElementById('panel-'+cat).innerHTML=html;
   list.forEach(function(item){applyRowToDOM(item.id, rowData[item.id]||defRow());});
