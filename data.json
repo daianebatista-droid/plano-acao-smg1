@@ -144,11 +144,11 @@
     }
   ],
   "m_0": {
-    "local": "Escritório novo",
+    "local": "",
     "resp": "Diego",
     "prazo": "2026-08-07",
     "status": "Pendente",
-    "obs": "",
+    "obs": "Ar condicionado quebrado ",
     "antes": null,
     "depois": null
   }
