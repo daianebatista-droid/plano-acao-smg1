@@ -118,6 +118,8 @@ select[data-s="Cancelado"]{background:#1e1e1e;color:#555;border-color:#333}
 .reload-btn{width:100%;padding:11px;background:#FFC107;color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px}
 .reload-btn:active{background:#FFB300}
 .last-upd{font-size:11px;color:#444;text-align:center;padding-bottom:16px}
+.res-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(min-width:1000px){.res-cat-grid{grid-template-columns:repeat(4,1fr)}}
 .resp-table{width:100%;border-collapse:collapse;font-size:12px;margin:0}
 .resp-table th{background:#161616;padding:6px 10px;text-align:left;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #2a2a2a}
 .resp-table td{padding:7px 10px;border-bottom:1px solid #252525;vertical-align:middle;color:#bbb}
@@ -603,9 +605,11 @@ function renderResumo(){
   }
   var html='<button class="reload-btn" onclick="reloadData()">🔄 Atualizar dados</button>';
   var tot={t:0,p:0,a:0,c:0};
+  var catData={};
+
+  // Coleta dados por categoria
   ['m','c','o','s'].forEach(function(cat){
     var cfg=DEFAULTS[cat],list=actLists[cat]||[],s={t:list.length,p:0,a:0,c:0};
-    // Responsável → {total, atrasado}
     var byResp={};
     list.forEach(function(item){
       var row=rowData[item.id]||defRow();
@@ -619,37 +623,59 @@ function renderResumo(){
       }
     });
     tot.t+=s.t;tot.p+=s.p;tot.a+=s.a;tot.c+=s.c;
-    // Build resp table
-    var respRows=Object.keys(byResp).sort();
-    var respHtml='';
-    if(respRows.length>0){
-      respHtml='<div class="resp-section"><div class="resp-section-title">⏳ Pendentes por responsável</div>'+
-        '<table class="resp-table"><thead><tr><th>Responsável</th><th>Qtd</th><th>Situação</th></tr></thead><tbody>';
-      respRows.forEach(function(r){
-        var d=byResp[r];
-        var tag=d.atrasado>0
-          ? '<span class="tag-atrasado">'+d.atrasado+' atrasado'+(d.atrasado>1?'s':'')+'</span>'
-          : '<span class="tag-prazo">no prazo</span>';
-        respHtml+='<tr><td>'+r+'</td><td><span class="resp-count">'+d.total+'</span></td><td>'+tag+'</td></tr>';
-      });
-      respHtml+='</tbody></table></div>';
-    }
-    html+='<div class="res-card"><div class="res-card-hdr" style="background:'+cfg.color+'"><span>'+cfg.label+'</span><span style="font-size:12px;opacity:.8">'+s.t+' ações</span></div>'+
+    catData[cat]={cfg:cfg,s:s,byResp:byResp};
+  });
+
+  // Cards lado a lado
+  html+='<div class="res-cat-grid">';
+  ['m','c','o','s'].forEach(function(cat){
+    var d=catData[cat],cfg=d.cfg,s=d.s;
+    html+='<div class="res-card">'+
+      '<div class="res-card-hdr" style="background:'+cfg.color+'">'+
+        '<span>'+cfg.label+'</span>'+
+        '<span style="font-size:11px;opacity:.85">'+s.t+'</span>'+
+      '</div>'+
       '<div class="res-grid">'+
         '<div class="res-stat t-color"><div class="res-num">'+s.t+'</div><div class="res-lbl">Total</div></div>'+
         '<div class="res-stat p-color"><div class="res-num">'+s.p+'</div><div class="res-lbl">Pendente</div></div>'+
-        '<div class="res-stat a-color"><div class="res-num">'+s.a+'</div><div class="res-lbl">Em andamento</div></div>'+
+        '<div class="res-stat a-color"><div class="res-num">'+s.a+'</div><div class="res-lbl">Andamento</div></div>'+
         '<div class="res-stat c-color"><div class="res-num">'+s.c+'</div><div class="res-lbl">Concluído</div></div>'+
-      '</div>'+respHtml+'</div>';
+      '</div>'+
+    '</div>';
   });
-  html+='<div class="res-card"><div class="res-card-hdr" style="background:#203864"><span>TOTAL GERAL</span><span style="font-size:12px;opacity:.8">'+tot.t+' ações</span></div>'+
-    '<div class="res-grid">'+
+  html+='</div>';
+
+  // Total geral — largura completa
+  html+='<div class="res-card"><div class="res-card-hdr" style="background:#1a1a1a;border:1px solid #FFC107">'+
+    '<span>TOTAL GERAL</span><span style="font-size:11px;opacity:.85">'+tot.t+' ações</span></div>'+
+    '<div class="res-grid" style="grid-template-columns:repeat(4,1fr)">'+
       '<div class="res-stat t-color"><div class="res-num">'+tot.t+'</div><div class="res-lbl">Total</div></div>'+
       '<div class="res-stat p-color"><div class="res-num">'+tot.p+'</div><div class="res-lbl">Pendente</div></div>'+
-      '<div class="res-stat a-color"><div class="res-num">'+tot.a+'</div><div class="res-lbl">Em andamento</div></div>'+
+      '<div class="res-stat a-color"><div class="res-num">'+tot.a+'</div><div class="res-lbl">Andamento</div></div>'+
       '<div class="res-stat c-color"><div class="res-num">'+tot.c+'</div><div class="res-lbl">Concluído</div></div>'+
-    '</div></div>'+
-  '<div class="last-upd" id="last-upd-ts">Última atualização: —</div>';
+    '</div></div>';
+
+  // Detalhamento por responsável — por categoria, largura completa
+  ['m','c','o','s'].forEach(function(cat){
+    var d=catData[cat],cfg=d.cfg,byResp=d.byResp;
+    var respRows=Object.keys(byResp).sort();
+    if(respRows.length===0) return;
+    html+='<div class="res-card">'+
+      '<div class="res-card-hdr" style="background:'+cfg.color+'">'+
+        '<span>⏳ '+cfg.label+' — Pendentes por responsável</span>'+
+      '</div>'+
+      '<table class="resp-table"><thead><tr><th>Responsável</th><th>Qtd</th><th>Situação</th></tr></thead><tbody>';
+    respRows.forEach(function(r){
+      var rd=byResp[r];
+      var tag=rd.atrasado>0
+        ? '<span class="tag-atrasado">'+rd.atrasado+' atrasado'+(rd.atrasado>1?'s':'')+'</span>'
+        : '<span class="tag-prazo">no prazo</span>';
+      html+='<tr><td>'+r+'</td><td><span class="resp-count">'+rd.total+'</span></td><td>'+tag+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+
+  html+='<div class="last-upd" id="last-upd-ts">Última atualização: —</div>';
   document.getElementById('panel-r').innerHTML=html;
 }
 
