@@ -102,7 +102,7 @@
     },
     {
       "id": "o_3",
-      "title": "impeza de mesas e impressoras com etiquetas coladas"
+      "title": "Limpeza de mesas e impressoras com etiquetas coladas"
     },
     {
       "id": "o_4",
@@ -372,14 +372,14 @@
     "local": "",
     "resp": "Ferrari",
     "prazo": "2026-08-04",
-    "status": "Pendente",
+    "status": "Concluído",
     "obs": "",
     "antes": null,
     "depois": null
   },
   "o_6": {
     "local": "",
-    "resp": "Jaderson",
+    "resp": "Thiago",
     "prazo": "2026-08-05",
     "status": "Pendente",
     "obs": "",
