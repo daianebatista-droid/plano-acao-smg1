@@ -142,5 +142,14 @@
       "id": "s_5",
       "title": "Substituir todas as placas de papel de SHE360 por material padrão gráfica"
     }
-  ]
+  ],
+  "o_0": {
+    "local": "Mesa de ajuda PS.",
+    "resp": "",
+    "prazo": "",
+    "status": "Pendente",
+    "obs": "",
+    "antes": null,
+    "depois": null
+  }
 }
