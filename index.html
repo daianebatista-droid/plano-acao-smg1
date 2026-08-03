@@ -323,26 +323,29 @@ function ghGet(){
 function ghSave(){
   if(!GH_TOKEN) return;
   setSyncStatus('saving','Salvando…');
+  _doSave(false);
+}
+
+function _doSave(isRetry){
   var state = buildFullState();
-  var json = JSON.stringify(state, null, 2);
-  var encoded = btoa(unescape(encodeURIComponent(json)));
-  var body = {
-    message: 'Plano de ação atualizado',
-    content: encoded
-  };
+  var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state,null,2))));
+  var body = {message:'Plano de ação atualizado',content:encoded};
   if(currentSha) body.sha = currentSha;
 
-  return fetch(ghApiUrl(), {
-    method: 'PUT',
-    headers: ghHeaders(),
-    body: JSON.stringify(body)
-  })
+  fetch(ghApiUrl(),{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)})
   .then(function(r){
+    if(r.status===409 && !isRetry){
+      // SHA desatualizado — busca SHA atual e tenta novamente
+      return fetch(ghApiUrl(),{headers:ghHeaders()})
+        .then(function(r2){return r2.json();})
+        .then(function(j){currentSha=j.sha; _doSave(true);});
+    }
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
   })
   .then(function(json){
-    if(json.content) currentSha = json.content.sha;
+    if(!json) return; // retry em andamento
+    if(json.content) currentSha=json.content.sha;
     setSyncStatus('ok','Salvo · '+fmtTime(new Date()));
   })
   .catch(function(e){
@@ -478,13 +481,18 @@ function pSlot(key,type){
   var pa=type==='antes';
   var cls=pa?'pa':'pd';
   var lbl=pa?'📷 ANTES':'📷 DEPOIS';
-  return '<div class="pslot '+cls+'" id="slot-'+key+'-'+type+'" onclick="trigCam(\'inp-'+key+'-'+type+'\')">' +
-    '<input type="file" accept="image/*" capture="environment" id="inp-'+key+'-'+type+'" onchange="handlePhoto(event,\''+key+'\',\''+type+'\')">' +
+  var iid='inp-'+key+'-'+type;
+  var delBtn=(type==='antes'&&!IS_ADMIN)?'':
+    '<button class="pdel" onclick="event.stopPropagation();event.preventDefault();delPhoto(\''+key+'\',\''+type+'\')">✕</button>';
+  // <label for> é mais confiável que trigCam em todos os browsers/iOS
+  return '<div class="pslot '+cls+'" id="slot-'+key+'-'+type+'">'+
+    '<label for="'+iid+'" style="position:absolute;inset:0;cursor:pointer"></label>'+
+    '<input type="file" accept="image/*" capture="environment" id="'+iid+'" onchange="handlePhoto(event,\''+key+'\',\''+type+'\')" style="display:none">'+
     '<div class="pslot-empty" id="empty-'+key+'-'+type+'"><div class="icon">📸</div><div class="lbl">'+lbl+'</div><div class="hint">Toque para abrir a câmera</div></div>'+
     '<img id="img-'+key+'-'+type+'" style="display:none">'+
     '<div class="pslot-overlay" id="ov-'+key+'-'+type+'" style="display:none">'+
       '<span class="ov-lbl">'+(pa?'ANTES':'DEPOIS')+'</span>'+
-      (type==='antes'&&!IS_ADMIN?'':'<button class="pdel" onclick="event.stopPropagation();delPhoto(\''+key+'\',\''+type+'\')">✕</button>')+
+      delBtn+
     '</div>'+
   '</div>';
 }
