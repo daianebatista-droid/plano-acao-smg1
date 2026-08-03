@@ -708,14 +708,21 @@ function reloadData(){
   }).catch(function(){setSyncStatus('err','Erro ao atualizar.');});
 }
 
-/* ── POLLING (30s) ── */
+/* ── POLLING (30s) — só re-renderiza se o SHA remoto mudou ── */
 function startPolling(){
   if(pollTimer) clearInterval(pollTimer);
   pollTimer=setInterval(function(){
-    ghGet().then(function(d){
-      applyFullState(d);
-      setSyncStatus('ok','Sincronizado · '+fmtTime(new Date()));
-    }).catch(function(){});
+    fetch(ghApiUrl(),{headers:ghHeaders()})
+      .then(function(r){if(!r.ok)throw new Error();return r.json();})
+      .then(function(json){
+        if(json.sha===currentSha) return; // nada mudou remotamente, não interrompe edição
+        currentSha=json.sha;
+        var raw=json.content.replace(/\n/g,'');
+        var data=JSON.parse(decodeURIComponent(escape(atob(raw))));
+        applyFullState(data);
+        setSyncStatus('ok','Sincronizado · '+fmtTime(new Date()));
+      })
+      .catch(function(){});
   }, 30000);
 }
 
