@@ -744,18 +744,39 @@ function setSyncStatus(s,msg){
   txt.textContent=msg;
 }
 
-/* ── INIT ── */
+/* ── INIT com retry ── */
+var _dataLoaded = false;
+
 function init(){
   document.getElementById('setup-overlay').style.display='none';
   setSyncStatus('saving','Carregando…');
+  loadWithRetry(4, 2000);
+}
+
+function loadWithRetry(attempts, delay){
   ghGet().then(function(d){
+    _dataLoaded = true;
     applyFullState(d);
     setSyncStatus('ok','Pronto · '+fmtTime(new Date()));
     startPolling();
   }).catch(function(e){
-    applyFullState({});
-    setSyncStatus('err','Erro ao carregar. Verifique o token.');
-    console.error(e);
+    console.error('Erro ao carregar (tentativas restantes: '+(attempts-1)+')', e);
+    if(attempts > 1){
+      setSyncStatus('saving','Reconectando… ('+attempts+'x)');
+      setTimeout(function(){ loadWithRetry(attempts-1, delay*1.5); }, delay);
+    } else {
+      // Todas as tentativas falharam — exibe defaults SEM apagar dados já na tela
+      if(!_dataLoaded){
+        ['m','c','o','s'].forEach(function(cat){
+          actLists[cat] = defaultActList(cat);
+        });
+        ['m','c','o','s'].forEach(renderPanel);
+        renderResumo();
+      }
+      setSyncStatus('err','Sem conexão com GitHub. Dados locais preservados.');
+      // Tenta reconectar via polling assim mesmo
+      startPolling();
+    }
   });
 }
 
