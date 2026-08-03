@@ -88,7 +88,7 @@
     },
     {
       "id": "c_new_1785757199580",
-      "title": "aquisição de novos quebra-molas para que possamos efetuar a substituição "
+      "title": "Aquisição de novos quebra-molas para que possamos efetuar a substituição "
     }
   ],
   "_act_o": [
@@ -429,6 +429,15 @@
   "c_new_1785486532491": {
     "local": "",
     "resp": "Daiana",
+    "prazo": "2026-08-14",
+    "status": "Pendente",
+    "obs": "",
+    "antes": null,
+    "depois": null
+  },
+  "c_new_1785757199580": {
+    "local": "",
+    "resp": "Diego",
     "prazo": "2026-08-14",
     "status": "Pendente",
     "obs": "",
