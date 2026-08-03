@@ -74,7 +74,7 @@
     },
     {
       "id": "m_new_1785760039414",
-      "title": "nterruptor com problemas com colado com fita adesiva\n"
+      "title": "Interruptor com problemas com colado com fita adesiva\n"
     }
   ],
   "_act_c": [
@@ -469,6 +469,15 @@
     "local": "",
     "resp": "Taina",
     "prazo": "2026-08-14",
+    "status": "Pendente",
+    "obs": "",
+    "antes": null,
+    "depois": null
+  },
+  "m_new_1785760039414": {
+    "local": "entre as vagas 67 e 68.",
+    "resp": "",
+    "prazo": "",
     "status": "Pendente",
     "obs": "",
     "antes": null,
