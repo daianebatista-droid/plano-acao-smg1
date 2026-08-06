@@ -87,7 +87,7 @@ select[data-s="Cancelado"]{background:#1e1e1e;color:#555;border-color:#333}
 .photo-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pslot{border-radius:8px;overflow:hidden;cursor:pointer;position:relative;min-height:90px}
 .pslot.pa{border:2px dashed #2E7D32;background:#0D1E0D}.pslot.pd{border:2px dashed #1565C0;background:#0D1828}
-.pslot input[type=file]{display:none}
+.pslot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1;width:100%;height:100%}
 .pslot-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 8px;min-height:90px}
 .pslot-empty .icon{font-size:26px}
 .pslot-empty .lbl{font-size:11px;font-weight:700}
@@ -446,7 +446,6 @@ function renderPanel(cat){
 function buildCard(cat, key, num, title, cfg){
   var ro=RESP.map(function(r){return '<option>'+r+'</option>';}).join('');
   var so=STATUS_OPTS.map(function(s){
-    if(s==='Concluído'&&!IS_ADMIN) return '<option disabled style="color:#ccc">'+s+' (só Admin)</option>';
     return '<option>'+s+'</option>';
   }).join('');
   var titleEl = IS_ADMIN
@@ -482,15 +481,15 @@ function pSlot(key,type){
   var cls=pa?'pa':'pd';
   var lbl=pa?'📷 ANTES':'📷 DEPOIS';
   var iid='inp-'+key+'-'+type;
+  // Botão excluir: admin sempre vê; não-admin só vê no DEPOIS
   var delBtn=(type==='antes'&&!IS_ADMIN)?'':
-    '<button class="pdel" onclick="event.stopPropagation();event.preventDefault();delPhoto(\''+key+'\',\''+type+'\')">✕</button>';
-  // <label for> é mais confiável que trigCam em todos os browsers/iOS
+    '<button class="pdel" style="position:relative;z-index:3" onclick="event.stopPropagation();delPhoto(\''+key+'\',\''+type+'\')">✕</button>';
+  // Input transparente cobre o slot inteiro (z-index:1) — funciona em todos os browsers/iOS
   return '<div class="pslot '+cls+'" id="slot-'+key+'-'+type+'">'+
-    '<label for="'+iid+'" style="position:absolute;inset:0;cursor:pointer"></label>'+
-    '<input type="file" accept="image/*" capture="environment" id="'+iid+'" onchange="handlePhoto(event,\''+key+'\',\''+type+'\')" style="display:none">'+
+    '<input type="file" accept="image/*" capture="environment" id="'+iid+'" onchange="handlePhoto(event,\''+key+'\',\''+type+'\')">'+
     '<div class="pslot-empty" id="empty-'+key+'-'+type+'"><div class="icon">📸</div><div class="lbl">'+lbl+'</div><div class="hint">Toque para abrir a câmera</div></div>'+
     '<img id="img-'+key+'-'+type+'" style="display:none">'+
-    '<div class="pslot-overlay" id="ov-'+key+'-'+type+'" style="display:none">'+
+    '<div class="pslot-overlay" id="ov-'+key+'-'+type+'" style="display:none;position:relative;z-index:2">'+
       '<span class="ov-lbl">'+(pa?'ANTES':'DEPOIS')+'</span>'+
       delBtn+
     '</div>'+
