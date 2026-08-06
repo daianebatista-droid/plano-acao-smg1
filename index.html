@@ -430,7 +430,6 @@ function renderPanel(cat){
   var cfg=DEFAULTS[cat];
   var list=actLists[cat]||[];
   var addBtnHtml=function(pos){
-    if(!IS_ADMIN) return '';
     return '<button class="add-btn '+cfg.abtn+' '+pos+'" onclick="addAction(\''+cat+'\')">' +
       '<span style="font-size:18px">＋</span> Adicionar nova ação</button>';
   };
