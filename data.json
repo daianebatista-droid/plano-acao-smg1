@@ -25,10 +25,6 @@
       "title": "Guarda-corpo segregando docas 03 e 04 para CHP e descarte"
     },
     {
-      "id": "m_7",
-      "title": "Colocar EVAs nas pontas dos flowracks (onde time colocou plástico para proteger perna)"
-    },
-    {
       "id": "m_8",
       "title": "Reparar flowracks com improviso (plástico amarrado)"
     },
@@ -342,15 +338,6 @@
     "depois": null
   },
   "m_14": {
-    "local": "",
-    "resp": "Taina",
-    "prazo": "",
-    "status": "Pendente",
-    "obs": "",
-    "antes": null,
-    "depois": null
-  },
-  "m_7": {
     "local": "",
     "resp": "Taina",
     "prazo": "",
