@@ -194,7 +194,7 @@
     },
     {
       "id": "o_new_1786038154586",
-      "title": ""
+      "title": "Multiplicar com o time: impressora sempre fechada e não colar etiquetas"
     }
   ],
   "_act_s": [
@@ -656,6 +656,15 @@
     "local": "",
     "resp": "Ferrari",
     "prazo": "2026-08-14",
+    "status": "Pendente",
+    "obs": "",
+    "antes": null,
+    "depois": null
+  },
+  "o_new_1786038154586": {
+    "local": "",
+    "resp": "Jones",
+    "prazo": "",
     "status": "Pendente",
     "obs": "",
     "antes": null,
