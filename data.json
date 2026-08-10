@@ -113,8 +113,8 @@
       "title": "27/07/26 - OS aberta para retirar correntes de plástico para deixar somente as de ferro."
     },
     {
-      "id": "m_new_1786366156469",
-      "title": ""
+      "id": "m_new_1786366161579",
+      "title": "Ajustar local abrigo químico lateral externa (lava olhos)"
     }
   ],
   "_act_c": [
@@ -651,15 +651,6 @@
   "o_new_1786038154586": {
     "local": "",
     "resp": "Jones",
-    "prazo": "2026-08-14",
-    "status": "Pendente",
-    "obs": "",
-    "antes": null,
-    "depois": null
-  },
-  "m_new_1786188319170": {
-    "local": "Citando alguns > vagas 35,37,39",
-    "resp": "Taina",
     "prazo": "2026-08-14",
     "status": "Pendente",
     "obs": "",
