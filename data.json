@@ -111,10 +111,6 @@
     {
       "id": "m_new_1786034620553",
       "title": "27/07/26 - OS aberta para retirar correntes de plástico para deixar somente as de ferro."
-    },
-    {
-      "id": "m_new_1786188319170",
-      "title": "Revisar e fixar todos os bate rodas solto"
     }
   ],
   "_act_c": [
@@ -651,15 +647,6 @@
   "o_new_1786038154586": {
     "local": "",
     "resp": "Jones",
-    "prazo": "2026-08-14",
-    "status": "Pendente",
-    "obs": "",
-    "antes": null,
-    "depois": null
-  },
-  "m_new_1786188319170": {
-    "local": "Citando alguns > vagas 35,37,39",
-    "resp": "Taina",
     "prazo": "2026-08-14",
     "status": "Pendente",
     "obs": "",
