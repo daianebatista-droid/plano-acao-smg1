@@ -123,6 +123,14 @@
     {
       "id": "m_new_1786992214696",
       "title": ""
+    },
+    {
+      "id": "m_new_1786992227496",
+      "title": ""
+    },
+    {
+      "id": "m_new_1786992227571",
+      "title": ""
     }
   ],
   "_act_c": [
@@ -707,6 +715,15 @@
   },
   "m_new_1786992214696": {
     "local": "Troca da lona ",
+    "resp": "",
+    "prazo": "",
+    "status": "Pendente",
+    "obs": "",
+    "antes": null,
+    "depois": null
+  },
+  "m_new_1786992227496": {
+    "local": "Puxa",
     "resp": "",
     "prazo": "",
     "status": "Pendente",
